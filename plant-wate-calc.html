@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plant Water Calculator — CHE110</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400;500&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sage: #6b8f71;
+    --moss: #3d5e42;
+    --clay: #c4a882;
+    --cream: #f8f4ed;
+    --soil: #7a5c3e;
+    --sky: #b8d4e8;
+    --water: #4a90b8;
+    --leaf: #a8c5a0;
+    --dark: #1e2d1f;
+    --accent: #e07b39;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background-color: var(--cream);
+    color: var(--dark);
+    font-family: 'Lato', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Background texture ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse at 10% 20%, rgba(107,143,113,.12) 0%, transparent 50%),
+      radial-gradient(ellipse at 90% 80%, rgba(184,212,232,.18) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 50%, rgba(196,168,130,.06) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ── Hero header ── */
+  header {
+    position: relative; z-index: 1;
+    padding: 56px 40px 40px;
+    display: flex; align-items: flex-start; gap: 24px;
+    border-bottom: 1px solid rgba(107,143,113,.25);
+  }
+
+  .header-icon {
+    font-size: 64px; line-height: 1;
+    filter: drop-shadow(0 4px 8px rgba(61,94,66,.3));
+    animation: sway 3s ease-in-out infinite;
+  }
+
+  @keyframes sway {
+    0%,100% { transform: rotate(-4deg); }
+    50%      { transform: rotate(4deg); }
+  }
+
+  .header-text h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 700;
+    color: var(--moss);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+
+  .header-text h1 em {
+    font-style: italic; color: var(--sage);
+  }
+
+  .header-text p {
+    margin-top: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: .8rem; color: var(--soil);
+    letter-spacing: .06em;
+  }
+
+  .badge {
+    display: inline-block;
+    background: var(--moss);
+    color: #fff;
+    font-family: 'DM Mono', monospace;
+    font-size: .7rem;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: .08em;
+    margin-top: 10px;
+  }
+
+  /* ── Main layout ── */
+  main {
+    position: relative; z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+
+  @media (max-width: 720px) {
+    main { grid-template-columns: 1fr; }
+    header { flex-direction: column; padding: 36px 24px 28px; }
+  }
+
+  /* ── Card ── */
+  .card {
+    background: rgba(255,255,255,.72);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(107,143,113,.2);
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: 0 4px 24px rgba(61,94,66,.08);
+    transition: transform .2s, box-shadow .2s;
+  }
+
+  .card:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(61,94,66,.14); }
+
+  .card h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem; font-weight: 700;
+    color: var(--moss); margin-bottom: 20px;
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  .card h2 .icon { font-size: 1.4rem; }
+
+  /* ── Form controls ── */
+  label {
+    display: block;
+    font-size: .8rem; font-weight: 700;
+    letter-spacing: .06em;
+    color: var(--soil);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    margin-top: 18px;
+  }
+
+  label:first-of-type { margin-top: 0; }
+
+  select, input[type=range] {
+    width: 100%;
+    font-family: 'Lato', sans-serif;
+  }
+
+  select {
+    appearance: none;
+    background: var(--cream) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b8f71' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 14px center;
+    border: 1.5px solid rgba(107,143,113,.4);
+    border-radius: 10px;
+    padding: 10px 40px 10px 14px;
+    font-size: .95rem; color: var(--dark);
+    cursor: pointer;
+    transition: border-color .2s;
+  }
+
+  select:focus { outline: none; border-color: var(--sage); }
+
+  .range-row { display: flex; align-items: center; gap: 12px; }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    height: 6px;
+    border-radius: 10px;
+    background: linear-gradient(to right, var(--sage) 0%, var(--sage) var(--pct, 50%), rgba(107,143,113,.2) var(--pct, 50%), rgba(107,143,113,.2) 100%);
+    cursor: pointer;
+    flex: 1;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--moss);
+    border: 3px solid #fff;
+    box-shadow: 0 2px 6px rgba(61,94,66,.4);
+    cursor: pointer;
+    transition: transform .15s;
+  }
+
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+  .range-val {
+    font-family: 'DM Mono', monospace;
+    font-size: .9rem; font-weight: 500;
+    color: var(--moss);
+    min-width: 48px; text-align: right;
+  }
+
+  /* ── CTA button ── */
+  .btn {
+    display: block; width: 100%;
+    margin-top: 28px;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--moss), var(--sage));
+    color: #fff;
+    font-family: 'DM Mono', monospace;
+    font-size: .95rem; font-weight: 500;
+    letter-spacing: .06em;
+    border: none; border-radius: 12px;
+    cursor: pointer;
+    position: relative; overflow: hidden;
+    transition: transform .18s, box-shadow .18s;
+  }
+
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(61,94,66,.35); }
+  .btn:active { transform: translateY(0); }
+
+  .btn::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,.15), transparent);
+  }
+
+  /* ── Result panel ── */
+  #result-card {
+    grid-column: 1 / -1;
+    display: none;
+    animation: fadeUp .5s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin-top: 8px;
+  }
+
+  .stat-box {
+    background: linear-gradient(135deg, var(--moss), var(--sage));
+    border-radius: 14px;
+    padding: 20px;
+    color: #fff;
+    text-align: center;
+  }
+
+  .stat-box .num {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.4rem; font-weight: 700;
+    line-height: 1;
+  }
+
+  .stat-box .unit {
+    font-family: 'DM Mono', monospace;
+    font-size: .75rem; opacity: .8;
+    margin-top: 4px;
+  }
+
+  .stat-box .lbl {
+    font-size: .8rem; opacity: .9;
+    margin-top: 8px; font-weight: 700;
+    letter-spacing: .04em;
+  }
+
+  .stat-box.sky { background: linear-gradient(135deg, var(--water), var(--sky)); }
+  .stat-box.clay { background: linear-gradient(135deg, var(--soil), var(--clay)); }
+
+  /* ── Schedule table ── */
+  .schedule { margin-top: 28px; }
+
+  .schedule h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem; color: var(--moss);
+    margin-bottom: 14px;
+  }
+
+  table { width: 100%; border-collapse: collapse; }
+
+  thead th {
+    background: var(--moss);
+    color: #fff;
+    font-family: 'DM Mono', monospace;
+    font-size: .78rem; letter-spacing: .06em;
+    text-transform: uppercase;
+    padding: 10px 14px; text-align: left;
+  }
+
+  thead th:first-child { border-radius: 10px 0 0 0; }
+  thead th:last-child  { border-radius: 0 10px 0 0; }
+
+  tbody tr { transition: background .15s; }
+  tbody tr:hover { background: rgba(107,143,113,.08); }
+
+  tbody td {
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(107,143,113,.15);
+    font-size: .9rem;
+  }
+
+  tbody td .dot {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    margin-right: 8px;
+  }
+
+  .dot.high   { background: var(--water); }
+  .dot.medium { background: var(--sage); }
+  .dot.low    { background: var(--clay); }
+
+  /* ── Plant DB card ── */
+  #db-card { grid-column: 1 / -1; }
+
+  .plant-chips {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    margin-top: 12px;
+  }
+
+  .chip {
+    background: rgba(107,143,113,.12);
+    border: 1.5px solid rgba(107,143,113,.25);
+    border-radius: 30px;
+    padding: 6px 16px;
+    font-size: .82rem; cursor: pointer;
+    transition: background .15s, border-color .15s;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .chip:hover, .chip.active {
+    background: var(--moss);
+    border-color: var(--moss);
+    color: #fff;
+  }
+
+  /* ── Tips ── */
+  .tip {
+    background: rgba(74,144,184,.08);
+    border-left: 3px solid var(--water);
+    border-radius: 0 10px 10px 0;
+    padding: 12px 16px;
+    font-size: .88rem; color: var(--dark);
+    margin-top: 16px;
+    line-height: 1.6;
+  }
+
+  /* ── Footer ── */
+  footer {
+    position: relative; z-index: 1;
+    text-align: center;
+    padding: 24px;
+    font-family: 'DM Mono', monospace;
+    font-size: .75rem;
+    color: rgba(61,94,66,.6);
+    border-top: 1px solid rgba(107,143,113,.2);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-icon">🌿</div>
+  <div class="header-text">
+    <h1>Plant <em>Water</em><br>Requirement Calculator</h1>
+    <p>CHE110 — Simplified Plant Hydration Tool</p>
+    <span class="badge">HTML · JavaScript · Python Logic</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- ── Calculator Card ── -->
+  <div class="card" id="calc-card">
+    <h2><span class="icon">🪴</span> Plant Details</h2>
+
+    <label for="plant">Plant Type</label>
+    <select id="plant">
+      <option value="">— Select a plant —</option>
+      <option value="rose">🌹 Rose</option>
+      <option value="cactus">🌵 Cactus</option>
+      <option value="tomato">🍅 Tomato</option>
+      <option value="basil">🌿 Basil</option>
+      <option value="fern">🌱 Fern</option>
+      <option value="succulent">🪴 Succulent</option>
+      <option value="orchid">🌸 Orchid</option>
+      <option value="mint">🌿 Mint</option>
+      <option value="aloe">🌵 Aloe Vera</option>
+      <option value="sunflower">🌻 Sunflower</option>
+    </select>
+
+    <label for="pot">Pot Size</label>
+    <select id="pot">
+      <option value="small">Small (< 6 inch)</option>
+      <option value="medium" selected>Medium (6–12 inch)</option>
+      <option value="large">Large (> 12 inch)</option>
+    </select>
+
+    <label for="season">Season</label>
+    <select id="season">
+      <option value="summer">☀️ Summer</option>
+      <option value="spring" selected>🌸 Spring</option>
+      <option value="monsoon">🌧️ Monsoon</option>
+      <option value="winter">❄️ Winter</option>
+    </select>
+
+    <label>Number of Plants: <span id="count-val">1</span></label>
+    <div class="range-row">
+      <input type="range" id="count" min="1" max="20" value="1"
+             oninput="syncRange(this,'count-val',''); updatePct(this)">
+      <span class="range-val" id="count-val-r">1</span>
+    </div>
+
+    <button class="btn" onclick="calculate()">💧 Calculate Water Needs</button>
+  </div>
+
+  <!-- ── Info Card ── -->
+  <div class="card">
+    <h2><span class="icon">📊</span> How It Works</h2>
+    <p style="font-size:.9rem;line-height:1.7;color:#444;">
+      This calculator uses a simple formula based on plant biology and environmental factors:
+    </p>
+    <br>
+    <div style="font-family:'DM Mono',monospace;font-size:.82rem;background:rgba(61,94,66,.06);border-radius:10px;padding:16px;line-height:2;">
+      <b style="color:var(--moss)">Daily Water (ml)</b> =<br>
+      &nbsp;&nbsp;Base Need<br>
+      &nbsp;&nbsp;× Pot Size Factor<br>
+      &nbsp;&nbsp;× Season Multiplier<br>
+      &nbsp;&nbsp;× Plant Count
+    </div>
+    <div class="tip">
+      🌍 Plants in Rajasthan's hot-arid climate need extra watering in summer. This tool adjusts for that!
+    </div>
+  </div>
+
+  <!-- ── Result Card ── -->
+  <div class="card" id="result-card">
+    <h2><span class="icon">💧</span> Your Watering Plan</h2>
+    <div class="result-grid" id="stats"></div>
+    <div class="schedule">
+      <h3>📅 Weekly Watering Schedule</h3>
+      <table id="schedule-table">
+        <thead>
+          <tr>
+            <th>Day</th><th>Water Amount</th><th>Frequency</th><th>Best Time</th>
+          </tr>
+        </thead>
+        <tbody id="schedule-body"></tbody>
+      </table>
+    </div>
+    <div id="tips-box"></div>
+  </div>
+
+  <!-- ── Plant Database ── -->
+  <div class="card" id="db-card">
+    <h2><span class="icon">🌱</span> Plant Water Database</h2>
+    <p style="font-size:.88rem;color:#555;margin-bottom:4px;">Click a plant to see its base water needs and care tips.</p>
+    <div class="plant-chips" id="chips"></div>
+    <div id="chip-info" style="margin-top:16px;"></div>
+  </div>
+
+</main>
+
+<footer>
+  CHE110 Project · Plant Water Requirement Calculator (Simplified) &nbsp;|&nbsp; Made with 🌿 HTML, JavaScript
+</footer>
+
+<script>
+const PLANTS = {
+  rose:      { name:'Rose',      emoji:'🌹', base:250, freq:'Daily',       tip:'Water at base; avoid wetting leaves. Loves morning watering.', level:'high' },
+  cactus:    { name:'Cactus',    emoji:'🌵', base:40,  freq:'Weekly',       tip:'Let soil dry completely between waterings. Less is more!', level:'low' },
+  tomato:    { name:'Tomato',    emoji:'🍅', base:400, freq:'Daily',        tip:'Consistent moisture is key to prevent blossom end rot.', level:'high' },
+  basil:     { name:'Basil',     emoji:'🌿', base:150, freq:'Every 2 days', tip:'Keep moist but well-drained. Wilting = needs water now!', level:'medium' },
+  fern:      { name:'Fern',      emoji:'🌱', base:200, freq:'Every 2 days', tip:'Loves humidity. Mist the leaves regularly.', level:'high' },
+  succulent: { name:'Succulent', emoji:'🪴', base:30,  freq:'Weekly',       tip:'Soak and dry method. Drainage is essential.', level:'low' },
+  orchid:    { name:'Orchid',    emoji:'🌸', base:100, freq:'Weekly',       tip:'Water once a week; let roots dry between waterings.', level:'low' },
+  mint:      { name:'Mint',      emoji:'🌿', base:180, freq:'Every 2 days', tip:'Keep soil moist. Great for hot climates!', level:'medium' },
+  aloe:      { name:'Aloe Vera', emoji:'🌵', base:50,  freq:'Weekly',       tip:'Very drought-tolerant. Water deeply but rarely.', level:'low' },
+  sunflower: { name:'Sunflower', emoji:'🌻', base:350, freq:'Daily',        tip:'Thirsty growers! Deep watering encourages strong roots.', level:'high' },
+};
+
+const POT = { small: 0.6, medium: 1.0, large: 1.8 };
+const SEASON = { summer: 1.5, spring: 1.0, monsoon: 0.5, winter: 0.7 };
+const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
+function syncRange(el, id1) {
+  document.getElementById(id1).textContent = el.value;
+  document.getElementById(id1+'-r').textContent = el.value;
+}
+
+function updatePct(el) {
+  const pct = ((el.value - el.min) / (el.max - el.min)) * 100;
+  el.style.setProperty('--pct', pct + '%');
+}
+
+function calculate() {
+  const plantKey = document.getElementById('plant').value;
+  if (!plantKey) { alert('Please select a plant type!'); return; }
+
+  const plant   = PLANTS[plantKey];
+  const pot     = document.getElementById('pot').value;
+  const season  = document.getElementById('season').value;
+  const count   = parseInt(document.getElementById('count').value);
+
+  const daily   = Math.round(plant.base * POT[pot] * SEASON[season] * count);
+  const weekly  = daily * 7;
+  const monthly = daily * 30;
+
+  // Stats
+  const stats = document.getElementById('stats');
+  stats.innerHTML = `
+    <div class="stat-box sky">
+      <div class="num">${daily}</div>
+      <div class="unit">ml / day</div>
+      <div class="lbl">Daily Need</div>
+    </div>
+    <div class="stat-box">
+      <div class="num">${(weekly/1000).toFixed(1)}</div>
+      <div class="unit">litres / week</div>
+      <div class="lbl">Weekly Total</div>
+    </div>
+    <div class="stat-box clay">
+      <div class="num">${(monthly/1000).toFixed(1)}</div>
+      <div class="unit">litres / month</div>
+      <div class="lbl">Monthly Est.</div>
+    </div>
+    <div class="stat-box" style="background:linear-gradient(135deg,#6b8f71,#a8c5a0)">
+      <div class="num">${plant.emoji}</div>
+      <div class="unit">${plant.name}</div>
+      <div class="lbl">${count} plant${count>1?'s':''}</div>
+    </div>
+  `;
+
+  // Schedule
+  const freq = plant.freq;
+  const waterDays = freq === 'Daily' ? [0,1,2,3,4,5,6] :
+                    freq === 'Weekly' ? [0] :
+                    [0,2,4]; // every 2 days
+
+  const tbody = document.getElementById('schedule-body');
+  tbody.innerHTML = '';
+  DAYS.forEach((day, i) => {
+    const isWater = waterDays.includes(i);
+    const amount  = isWater ? `${Math.round(daily/waterDays.length)} ml` : '—';
+    const time    = season === 'summer' ? 'Early Morning / Evening' : 'Morning';
+    const dotCls  = plant.level;
+    tbody.innerHTML += `
+      <tr>
+        <td>${day}</td>
+        <td>${isWater ? `<span class="dot ${dotCls}"></span>${amount}` : '<span style="color:#aaa">Rest Day</span>'}</td>
+        <td>${isWater ? freq : '—'}</td>
+        <td style="font-size:.82rem;color:#666">${isWater ? time : '—'}</td>
+      </tr>`;
+  });
+
+  // Tips
+  document.getElementById('tips-box').innerHTML = `
+    <div class="tip">
+      💡 <b>${plant.name} Tip:</b> ${plant.tip}
+    </div>`;
+
+  const rc = document.getElementById('result-card');
+  rc.style.display = 'block';
+  rc.style.animation = 'none';
+  rc.offsetHeight;
+  rc.style.animation = '';
+  rc.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Build chips
+const chipsEl = document.getElementById('chips');
+Object.keys(PLANTS).forEach(key => {
+  const p = PLANTS[key];
+  const c = document.createElement('div');
+  c.className = 'chip';
+  c.innerHTML = `${p.emoji} ${p.name}`;
+  c.onclick = () => {
+    document.querySelectorAll('.chip').forEach(x => x.classList.remove('active'));
+    c.classList.add('active');
+    const levelColor = { high:'var(--water)', medium:'var(--sage)', low:'var(--clay)' };
+    document.getElementById('chip-info').innerHTML = `
+      <div style="background:rgba(107,143,113,.07);border-radius:12px;padding:16px;font-size:.88rem;line-height:1.7;">
+        <b style="font-size:1.1rem;">${p.emoji} ${p.name}</b><br>
+        <span style="color:var(--soil)">Base Need:</span> <b>${p.base} ml/day</b> &nbsp;|&nbsp;
+        <span style="color:var(--soil)">Frequency:</span> <b>${p.freq}</b><br>
+        <span style="display:inline-block;margin-top:6px;padding:3px 12px;border-radius:20px;font-size:.78rem;font-weight:700;background:${levelColor[p.level]};color:#fff;">
+          ${p.level.toUpperCase()} WATER NEED
+        </span><br>
+        <span style="color:#555;margin-top:6px;display:inline-block">💡 ${p.tip}</span>
+      </div>`;
+  };
+  chipsEl.appendChild(c);
+});
+
+// Init range
+document.querySelectorAll('input[type=range]').forEach(r => updatePct(r));
+</script>
+</body>
+</html>
